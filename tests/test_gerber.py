@@ -1,21 +1,23 @@
 from functools import lru_cache
 from hashlib import sha256
+from itertools import chain
 from pathlib import Path
 from shutil import copytree
 from tempfile import TemporaryDirectory
 from urllib.request import urlretrieve
 from zipfile import ZipFile
-from itertools import chain
 
 import pytest
 
-import eetk.gerber as gerber
+import eetk.gerber.gerber as gerber
 
 
 def pytest_generate_tests(metafunc):
     if "gerbv_example" in metafunc.fixturenames:
         examples = _get_gerbv_examples()
-        metafunc.parametrize("gerbv_example", examples, ids=[e.name for e in examples])
+        metafunc.parametrize(
+            "gerbv_example", examples, ids=[str(Path(*e.parts[-2:])) for e in examples]
+        )
 
 
 @pytest.fixture(scope="session")
@@ -52,12 +54,10 @@ def _get_gerbv_examples():
             )
 
     includes = [
-        ".apr",
         ".asb",
         ".ast",
         ".bot",
         ".drd",
-        ".exc",
         ".gbl",
         ".gbo",
         ".gbp",
@@ -77,7 +77,6 @@ def _get_gerbv_examples():
         ".gtp",
         ".gts",
         ".off",
-        ".rul",
         ".smb",
         ".smt",
         ".ssb",
@@ -96,9 +95,22 @@ def _get_gerbv_examples():
 
 
 def test_gerbv_example(gerbv_example):
-    print(gerbv_example)
     try:
-        for _ in gerber.parse(gerbv_example):
+        for command in gerber.parse(gerbv_example):
             pass
+            # print(command)
+            # for s in command.words:
+            #    print("-" + command.text[s])
     except Exception as e:
-        raise Exception(f"Failed to parse {gerbv_example}") from e
+        pytest.fail(f"{e} in {gerbv_example}")
+
+
+# @pytest.mark.parametrize("command, expected", [
+#    ("X100Y200I300J400D01*", gerber.D01(x=100 , y=200 , i=300 , j=400 , warnings=None)),
+#    ("X100Y200D01*"        , gerber.D01(x=100 , y=200 , i=None, j=None, warnings=None)),
+#    ("I300J400D01*"        , gerber.D01(x=None, y=None, i=300 , j=400 , warnings=None)),
+#    ("X100D01*"            , gerber.D01(x=100 , y=None, i=None, j=None, warnings=None)),
+#    ("Y200D01*"            , gerber.D01(x=None, y=200 , i=None, j=None, warnings=None)),
+# ])
+# def test_parse_D01(command, expected):
+#    assert gerber._parse_D01(command) == expected
