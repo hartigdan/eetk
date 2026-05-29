@@ -18,11 +18,28 @@ def pytest_generate_tests(metafunc):
         metafunc.parametrize(
             "gerbv_example", examples, ids=[str(Path(*e.parts[-2:])) for e in examples]
         )
+    elif "ucamco_example" in metafunc.fixturenames:
+        examples = _get_ucamco_examples()
+        metafunc.parametrize("ucamco_example", examples)
 
 
-@pytest.fixture(scope="session")
-def gerbv_examples():
-    return _get_gerbv_examples()
+def _get_ucamco_examples():
+    urls = [
+        "https://www.ucamco.com/files/downloads/file_en/220/pcb-fabrication-data-test-file-1_en.zip",
+        "https://www.ucamco.com/files/downloads/file_en/221/pcb-fabrication-data-test-file-2_en.zip",
+        "https://www.ucamco.com/files/downloads/file_en/256/gerber-job-format-test-files_en.zip",
+        "https://www.ucamco.com/files/downloads/file_en/306/xnc-format-test-files_en.zip",
+        "https://www.ucamco.com/files/downloads/file_en/351/gerber-layer-format-x3-example-component-layer-from-spec_en.zip",
+        "https://www.ucamco.com/files/downloads/file_en/357/gerber-job-format-sample-files_en.zip",
+        "https://www.ucamco.com/files/downloads/file_en/423/gerber-layer-format-test-files_en.zip",
+        "https://www.ucamco.com/files/downloads/file_en/502/gerber-job-format-x3-librepcb-sample-1_en.zip",
+        "https://www.ucamco.com/files/downloads/file_en/503/gerber-job-format-x3-librepcb-sample-2_en.zip",
+        "https://www.ucamco.com/files/downloads/file_en/513/gerber-layer-format-x3-kit-dev-coldfire-xilinx_en.zip",
+        "https://www.ucamco.com/files/downloads/file_en/514/gerber-layer-format-x3-stickhub_en.zip",
+        "https://www.ucamco.com/files/downloads/file_en/515/gerber-layer-format-x3-li-ion-charger_en.zip",
+    ]
+    dir = Path(__file__).parent / "ucamco_examples"
+    # .... todo
 
 
 @lru_cache
@@ -53,38 +70,14 @@ def _get_gerbv_examples():
                 next(td.glob("gerbv*")).joinpath("example"), dir, dirs_exist_ok=True
             )
 
-    includes = [
-        ".asb",
-        ".ast",
-        ".bot",
-        ".drd",
-        ".gbl",
-        ".gbo",
-        ".gbp",
-        ".gbr",
-        ".gbs",
-        ".gbx",
-        ".gd1",
-        ".gdo",
-        ".ger",
-        ".gg1",
-        ".gm1",
-        ".gm2",
-        ".gp1",
-        ".grb",
-        ".gtl",
-        ".gto",
-        ".gtp",
-        ".gts",
-        ".off",
-        ".smb",
-        ".smt",
-        ".ssb",
-        ".sst",
-        ".top",
-    ]
+    # fmt: off
+    includes = [".asb", ".ast", ".bot", ".drd", ".gbl", ".gbo", ".gbp", ".gbr",
+                ".gbs", ".gbx", ".gd1", ".gdo", ".ger", ".gg1", ".gm1", ".gm2",
+                ".gp1", ".grb", ".gtl", ".gto", ".gtp", ".gts", ".off", ".smb",
+                ".smt", ".ssb", ".sst", ".top"]
 
     excludes = [".pcb.output_plated-drill.grb", ".pcb.output_unplated-drill.grb"]
+    # fmt: on
 
     files = [f for f in dir.glob("**/*")]
     files = [f for f in files if f.is_file()]
@@ -96,11 +89,12 @@ def _get_gerbv_examples():
 
 def test_gerbv_example(gerbv_example):
     try:
-        for command in gerber.parse(gerbv_example):
-            pass
-            # print(command)
-            # for s in command.words:
-            #    print("-" + command.text[s])
+        gerber.read(gerbv_example)
+        # for command in gerber.read(gerbv_example):
+        # pass
+        # print(command)
+        # for s in command.words:
+        #    print("-" + command.text[s])
     except Exception as e:
         pytest.fail(f"{e} in {gerbv_example}")
 
